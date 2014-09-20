@@ -559,28 +559,45 @@ DP_SharePoint.ReplaceLinks = function() {
 
 		// Obtain a collection of all page links
 	var AllLinks = document.getElementsByTagName("a");
+	var AllLinksCnt = AllLinks.length;
 	var CurMatch;
+	var CurLink;
+	var MatchedLinks = [];
+
 		// Set the Target Proxy
 	var TargetProtocol = "news";
 	var ReplacementMask = new RegExp(TargetProtocol + "://\\*([A-Z0-9]{1,15})\\*", "i");
 
 		// Loop over all links and find those marked for replacement	
-	for( var cnt=0, limit = AllLinks.length; cnt < limit; ++cnt ) {
-		CurMatch = null;
-		if ( AllLinks[cnt].href ) {
-		if ( (CurMatch = AllLinks[cnt].href.match(ReplacementMask)) != null ) {
-			switch ( CurMatch[1] ) {
-				case "sametime":
-					ReplaceLinks_Sametime( AllLinks[cnt] );
-					break;
-				default:
-					ReplaceLinks_Other( AllLinks[cnt], CurMatch[1] );
-					break;
-
+	for( var cnt=0; cnt < AllLinksCnt; ++cnt ) {
+		CurLink = AllLinks[cnt];
+		if ( CurLink.href ) {
+			CurMatch = CurLink.href.match(ReplacementMask);
+			if ( CurMatch != null ) {
+					// Add a new Attribute, containing the new Protocol value
+				CurLink.setAttribute("DP_SharePoint_ReplacementProtocol", CurMatch[1]);
+					// Add the Link to the Matched Links group for later processing
+				MatchedLinks.push(CurLink);
 			};
 		};
-		};
  	};
+
+		// Loop over the Collected Links
+	for( var cnt=0; cnt < MatchedLinks.length; ++cnt ) {
+		CurLink = MatchedLinks[cnt];
+		CurProtocol = CurLink.getAttribute("DP_SharePoint_ReplacementProtocol");
+		switch ( CurProtocol ) {
+			case "lync":
+				ReplaceLinks_Lync( CurLink );
+				break;
+			case "sametime":
+				ReplaceLinks_Sametime( CurLink );
+				break;
+			default:
+				ReplaceLinks_Other( CurLink );
+				break;
+		};
+	};
 
 	function ReplaceLinks_Sametime(CurLink) {
 
@@ -602,9 +619,9 @@ DP_SharePoint.ReplaceLinks = function() {
 			document.getElementsByTagName("head")[0].appendChild(ScriptElement);
 		};
 
+
 			// Determine the ID to use
-		var CurID = CurLink.href.replace(ReplacementMask, "");
-		CurID = CurID.replace("/", "");
+		var CurID = CurLink.href.replace(ReplacementMask, "").replace("/", "");
 			// Get the Content of the link (the Sametime ID) and strip any crap HTML out of it
 		if ( CurID == "" ) {
 			var TempID = CurLink.innerHTML;
@@ -619,8 +636,51 @@ DP_SharePoint.ReplaceLinks = function() {
 
 	};
 
-	function ReplaceLinks_Other(CurLink, NewProtocol) {
+	function ReplaceLinks_Lync(CurLink) {
+	
+			// Determine the ID to use
+		var CurID = CurLink.href.replace(ReplacementMask, "").replace("/", "");
+		var CurHtmlID = CurID.replace("@", "").replace(".", "");
+			// Get the Content of the link (the Lync ID) and strip any crap HTML out of it
+		if ( CurID == "" ) {
+			var TempID = CurLink.innerHTML;
+			CurID = TempID.replace(/<.*?>/g, ''); 
+		};
 
+			// Remove the href
+		CurLink.removeAttribute("href");
+
+			// Create the Span Node
+		CurSpan = document.createElement("span");
+
+			// Create the Image Node
+		CurImg = document.createElement("img");
+		CurImg.setAttribute("border", "0");
+		CurImg.setAttribute("valign", "middle");
+		CurImg.setAttribute("height", "12");
+		CurImg.setAttribute("width", "12");
+		CurImg.setAttribute("ShowOfflinePawn", "1");
+		CurImg.setAttribute("id", "Lync_" + CurHtmlID);
+		CurImg.setAttribute("style", "margin-right: 3px;");
+
+			// Add the Img to the Span
+		CurSpan.appendChild(CurImg);
+
+			// Move all of the content from the Link to the span
+		CurSpan.appendChild(CurLink.firstChild);
+
+			// Replace the CurLink with the Span
+		CurLink.appendChild(CurSpan);
+
+			// Load the image and run the script
+		CurImg.setAttribute("onload", "IMNRC('" + CurID + "')");
+		CurImg.setAttribute("src", "/_layouts/images/imnhdr.gif");
+
+	};
+
+	function ReplaceLinks_Other(CurLink) {
+
+		var NewProtocol = CurLink.getAttribute("DP_SharePoint_ReplacementProtocol");
 		CurLink.href = CurLink.href.replace(ReplacementMask, NewProtocol + ":\\\\");
 
 	};
