@@ -20,11 +20,11 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
-+) Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
++) Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 
-+) Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. 
++) Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 
-+) Neither the name of the THE DEPRESSED PRESS (DEPRESSEDPRESS.COM) nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. 
++) Neither the name of the THE DEPRESSED PRESS (DEPRESSEDPRESS.COM) nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
@@ -81,9 +81,9 @@ DP_SharePoint.getFieldRef = function( Title ) {
 	if ( document.location.href.indexOf("EditForm.aspx") > -1 ) {
 		FormType = "Edit";
 	} else if ( document.location.href.indexOf("NewForm.aspx") > -1 ) {
-		FormType = "New";	
+		FormType = "New";
 	} else if ( document.location.href.indexOf("DispForm.aspx") > -1 ) {
-		FormType = "Display";	
+		FormType = "Display";
 	};
 
 		// Set an object to collect the output
@@ -95,7 +95,8 @@ DP_SharePoint.getFieldRef = function( Title ) {
 		// Find the correct h3
 	var FieldFound = false;
 	for (var cnt=0; cnt < h3Tags.length; cnt++) {
-		if ( h3Tags[cnt] && h3Tags[cnt].innerHTML.indexOf(Title) > -1 ) {
+			// The H3's contain all sorts of odd HTML, so we check the whole Node for the exact string bounded by other tags
+		if ( h3Tags[cnt] && h3Tags[cnt].parentNode.innerHTML.indexOf(">" + Title + "<") > -1 ) {
 			Output.LabelRef = h3Tags[cnt];
 			FieldFound = true;
 			break;
@@ -152,13 +153,13 @@ DP_SharePoint.getFieldRef = function( Title ) {
 					Output.ElRef.Choices = [];
 					for (var cnt=0; cnt < CurInputs.length; cnt++) {
 						if ( CurInputs[Cnt].type != "text" ) {
-							Output.ElRef.Choices.push(CurInputs[Cnt]);						
+							Output.ElRef.Choices.push(CurInputs[Cnt]);
 						};
 						if ( CurInputs[Cnt].type == "text" ) {
 							Output.ElRef.CustomChoice = CurInputs[Cnt - 1];
 							Output.ElRef.Custom = CurInputs[Cnt];
 						};
-					};			
+					};
 					if ( !Output.SubType ) {
 						if ( CurInputs[Cnt].type == "radio" ) {
 							if ( Output.ElRef.Custom ) {
@@ -171,8 +172,8 @@ DP_SharePoint.getFieldRef = function( Title ) {
 								Output.SubType = "CheckboxWithCustom";
 							} else {
 								Output.SubType = "Checkbox";
-							};					
-						};		
+							};
+						};
 					};
 				};
 
@@ -243,7 +244,7 @@ DP_SharePoint.getFieldRef = function( Title ) {
 
 		};
 	};
-	
+
 		// Return the output object
 	return Output;
 
@@ -299,6 +300,16 @@ DP_SharePoint.showField = function( Field ) {
 
 	// Webservice Methods
 	//
+
+	// DP_SharePoint.getElementsWithNS Method
+	// Uses the getElementsByTagNameNS() method for those browers that support it and the getElementsByTagName() method with namespace for others.
+	//
+DP_SharePoint.getRows = function( XML, Tag, NS ) {
+
+		// Even with getElementsByTagNameNS Chrome still ignores the Namespace, so a wildcard is used instead. This may cause problems if multiple namespaces have "row" tags.
+	return XML.getElementsByTagNameNS ? XML.getElementsByTagNameNS("*", Tag) : XML.getElementsByTagName(NS + ":" + Tag);
+
+};
 
 	// DP_SharePoint.callListService_Get Method
 	//
@@ -370,12 +381,15 @@ DP_SharePoint.callListService_Update = function( Request, ServiceURL, ListName, 
 };
 
 
-	// DP_SharePoint.cleanSP_MultiLineText Method
+	// Webservice Cleanup Methods
 	//
-DP_SharePoint.cleanSP_MultiLineText = function( XML, ColName ) {
+
+	// DP_SharePoint.cleanSP_Numeric Method
+	//
+DP_SharePoint.cleanSP_Numeric = function( XML, ColName ) {
 
 		// Get Rows
-	var Rows = XML.getElementsByTagName("z:row");
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
 
 		// Loop over rows
 	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
@@ -383,17 +397,45 @@ DP_SharePoint.cleanSP_MultiLineText = function( XML, ColName ) {
 			// Get Current Value
 		var CurVal = "";
 		CurVal = Rows[Cnt].getAttribute(ColName);
-			// Create a Temporary Div to store the HTML
-		var TempDiv = document.createElement("div");
-		TempDiv.innerHTML = CurVal;
-			// Pull the (now parsed) value from the div
-		if ( TempDiv.innerText !== undefined ) {
-			Rows[Cnt].setAttribute(ColName, TempDiv.innerText); // IE
-		} else {
-			Rows[Cnt].setAttribute(ColName, TempDiv.textContent); // FF
+		if ( CurVal != "" ) {
+			Rows[Cnt].setAttribute(ColName, +(CurVal));
 		};
-			// Null out the TempDiv
-		TempDiv = null;
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+	// DP_SharePoint.cleanSP_MultiLineText Method
+	//
+DP_SharePoint.cleanSP_MultiLineText = function( XML, ColName ) {
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+		if ( !CurVal ) {
+			Rows[Cnt].setAttribute(ColName, "");
+		} else {
+				// Create a Temporary Div to store the HTML
+			var TempDiv = document.createElement("div");
+			TempDiv.innerHTML = CurVal;
+				// Pull the (now parsed) value from the div
+			if ( TempDiv.innerText !== undefined ) {
+				Rows[Cnt].setAttribute(ColName, TempDiv.innerText); // IE
+			} else {
+				Rows[Cnt].setAttribute(ColName, TempDiv.textContent); // FF
+			};
+				// Null out the TempDiv
+			TempDiv = null;
+		};
 
 	};
 
@@ -405,10 +447,14 @@ DP_SharePoint.cleanSP_MultiLineText = function( XML, ColName ) {
 
 	// DP_SharePoint.cleanSP_UserList Method
 	//
-DP_SharePoint.cleanSP_UserList = function( XML, ColName ) {
+DP_SharePoint.cleanSP_UserList = function( XML, ColName, Seperator ) {
+
+	if ( !Seperator ) {
+		Seperator = "; ";
+	};
 
 		// Get Rows
-	var Rows = XML.getElementsByTagName("z:row");
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
 
 		// Loop over rows
 	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
@@ -419,8 +465,8 @@ DP_SharePoint.cleanSP_UserList = function( XML, ColName ) {
 
 			// Strip ID values
 		var TempVal = CurVal.replace(/[0-9]{1,5};#/g, "");
-			// Convert remaining separators to ", "
-		TempVal = TempVal.replace(/;#/g, ", ");
+			// Convert remaining separators
+		TempVal = TempVal.replace(/;#/g, Seperator);
 
 			// Set new Value
 		Rows[Cnt].setAttribute(ColName, TempVal);
@@ -438,7 +484,7 @@ DP_SharePoint.cleanSP_UserList = function( XML, ColName ) {
 DP_SharePoint.cleanSP_CalculatedField = function( XML, ColName ) {
 
 		// Get Rows
-	var Rows = XML.getElementsByTagName("z:row");
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
 
 		// Loop over rows
 	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
@@ -463,10 +509,14 @@ DP_SharePoint.cleanSP_CalculatedField = function( XML, ColName ) {
 
 	// DP_SharePoint.cleanSP_LookupList Method
 	//
-DP_SharePoint.cleanSP_LookupList = function( XML, ColName, NoValuePlaceholder ) {
+DP_SharePoint.cleanSP_LookupList = function( XML, ColName, NoValuePlaceholder, Seperator ) {
+
+	if ( !Seperator ) {
+		Seperator = "; ";
+	};
 
 		// Get Rows
-	var Rows = XML.getElementsByTagName("z:row");
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
 
 		// Loop over rows
 	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
@@ -479,19 +529,17 @@ DP_SharePoint.cleanSP_LookupList = function( XML, ColName, NoValuePlaceholder ) 
 		if ( CurVal ) {
 				// Strip ID values
 			var TempVal = CurVal.replace(/[0-9]{1,5};#/g, "");
-				// Convert remaining separators to "; "
-			TempVal = TempVal.replace(/;#/g, "; ");
-				// If the first character is a separator, get rid of it.
-			TempVal = TempVal.replace(/; /, "");
-	
+				// Convert remaining separators
+			TempVal = TempVal.replace(/;#/g, Seperator );
+
 				// Set new Value
 			Rows[Cnt].setAttribute(ColName, TempVal);
-		
+
 		} else {
 
 				// Set Value to NoValuePlaceholder
-			Rows[Cnt].setAttribute(ColName, NoValuePlaceholder);		
-		
+			Rows[Cnt].setAttribute(ColName, NoValuePlaceholder);
+
 		};
 
 	};
@@ -512,7 +560,7 @@ DP_SharePoint.cleanSP_DateTime = function( XML, ColName, TimeFormat, DateFormat,
 	};
 
 		// Get Rows
-	var Rows = XML.getElementsByTagName("z:row");
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
 
 		// Loop over rows
 	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
@@ -524,7 +572,7 @@ DP_SharePoint.cleanSP_DateTime = function( XML, ColName, TimeFormat, DateFormat,
 			// Parse the Date
 		var CurDate = Date.parseFormat(CurVal, "YYYY-MM-DD HH:mm:ss");
 
-			// Determine what to 
+			// Determine what to
 		var TempVal = "";
 		if ( CurDate != null ) {
 			if ( TimeFormat != null && DateFormat == null ) {
@@ -553,6 +601,106 @@ DP_SharePoint.cleanSP_DateTime = function( XML, ColName, TimeFormat, DateFormat,
 };
 
 
+	// DP_SharePoint.cleanSP_Custom Method
+	//
+DP_SharePoint.cleanSP_Custom = function( XML, ColName, Handler, NewColName ) {
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+
+			// Set new Value
+		if ( !NewColName ) {
+			Rows[Cnt].setAttribute(ColName, Handler(CurVal));
+		} else {
+			Rows[Cnt].setAttribute(NewColName, Handler(CurVal));
+		};
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+
+
+
+	// Webservice Utility Methods
+	//
+
+	// DP_SharePoint.getAttributes
+	//
+DP_SharePoint.getAttributes = function( XML, ColName ) {
+
+		// Set an array for return
+	var Attributes = [];
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		Attributes[Cnt] = Rows[Cnt].getAttribute(ColName);
+
+	};
+
+		// Return the Array
+	return Attributes;
+
+};
+
+	// DP_SharePoint.joinResponses
+	//
+DP_SharePoint.joinResponses = function( XML, ColName, XML2, ColName2 ) {
+
+		// Get Rows of the Base and inserted XML
+	var Rows = DP_SharePoint.getRows(XML, "row", "z");
+	var Rows2 = DP_SharePoint.getRows(XML2, "row", "z");
+
+		// Loop over rows of the Base XML
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Base XML row information
+		var CurRow = Rows[Cnt];
+		var CurVal = CurRow.getAttribute(ColName);
+
+			// Loop over rows of the inserted XML
+		for ( var iCnt=0; iCnt < Rows2.length; iCnt++ ) {
+
+				// Get Insertable XML row information
+			var CurRow2 = Rows2[iCnt];
+			var CurVal2 = CurRow2.getAttribute(ColName2);
+
+				// Set new Value
+			if ( CurVal == CurVal2 ) {
+
+					// Insert the row into the Base XML
+				CurRow.appendChild(CurRow2);
+
+			};
+
+		};
+
+	};
+
+		// Return the Array
+	return XML;
+
+};
+
+
+	// Utility Methods
+	//
+
 	// DP_SharePoint.ReplaceLinks Method
 	//
 DP_SharePoint.ReplaceLinks = function() {
@@ -568,7 +716,7 @@ DP_SharePoint.ReplaceLinks = function() {
 	var TargetProtocol = "news";
 	var ReplacementMask = new RegExp(TargetProtocol + "://\\*([A-Z0-9]{1,15})\\*", "i");
 
-		// Loop over all links and find those marked for replacement	
+		// Loop over all links and find those marked for replacement
 	for( var cnt=0; cnt < AllLinksCnt; ++cnt ) {
 		CurLink = AllLinks[cnt];
 		if ( CurLink.href ) {
@@ -625,7 +773,7 @@ DP_SharePoint.ReplaceLinks = function() {
 			// Get the Content of the link (the Sametime ID) and strip any crap HTML out of it
 		if ( CurID == "" ) {
 			var TempID = CurLink.innerHTML;
-			CurID = TempID.replace(/<.*?>/g, ''); 
+			CurID = TempID.replace(/<.*?>/g, '');
 		};
 
 			// Modify the CurLink
@@ -637,14 +785,14 @@ DP_SharePoint.ReplaceLinks = function() {
 	};
 
 	function ReplaceLinks_Lync(CurLink) {
-	
+
 			// Determine the ID to use
 		var CurID = CurLink.href.replace(ReplacementMask, "").replace("/", "");
 		var CurHtmlID = CurID.replace("@", "").replace(".", "");
 			// Get the Content of the link (the Lync ID) and strip any crap HTML out of it
 		if ( CurID == "" ) {
 			var TempID = CurLink.innerHTML;
-			CurID = TempID.replace(/<.*?>/g, ''); 
+			CurID = TempID.replace(/<.*?>/g, '');
 		};
 
 			// Remove the href
@@ -653,28 +801,42 @@ DP_SharePoint.ReplaceLinks = function() {
 			// Create the Span Node
 		CurSpan = document.createElement("span");
 
-			// Create the Image Node
-		CurImg = document.createElement("img");
-		CurImg.setAttribute("border", "0");
-		CurImg.setAttribute("valign", "middle");
-		CurImg.setAttribute("height", "12");
-		CurImg.setAttribute("width", "12");
-		CurImg.setAttribute("ShowOfflinePawn", "1");
-		CurImg.setAttribute("id", "Lync_" + CurHtmlID);
-		CurImg.setAttribute("style", "margin-right: 3px;");
+			// If we're not in an ActiveX capable browser
+		if ( !window.ActiveXObject ) {
 
-			// Add the Img to the Span
-		CurSpan.appendChild(CurImg);
+				// Add a simple lable (nothing else to do, really)
+			CurLink.innerHTML = "Lync: " + CurLink.innerHTML;
+				// Move all of the content from the Link to the span
+			CurSpan.appendChild(CurLink.firstChild);
+				// Replace the CurLink with the Span
+			CurLink.appendChild(CurSpan);
 
-			// Move all of the content from the Link to the span
-		CurSpan.appendChild(CurLink.firstChild);
+		} else {
 
-			// Replace the CurLink with the Span
-		CurLink.appendChild(CurSpan);
+				// Create the Image Node
+			CurImg = document.createElement("img");
+			CurImg.setAttribute("border", "0");
+			CurImg.setAttribute("valign", "middle");
+			CurImg.setAttribute("height", "12");
+			CurImg.setAttribute("width", "12");
+			CurImg.setAttribute("ShowOfflinePawn", "1");
+			CurImg.setAttribute("id", "Lync_" + CurHtmlID);
+			CurImg.setAttribute("style", "margin-right: 3px;");
 
-			// Load the image and run the script
-		CurImg.setAttribute("onload", "IMNRC('" + CurID + "')");
-		CurImg.setAttribute("src", "/_layouts/images/imnhdr.gif");
+				// Add the Img to the Span
+			CurSpan.appendChild(CurImg);
+
+				// Move all of the content from the Link to the span
+			CurSpan.appendChild(CurLink.firstChild);
+
+				// Replace the CurLink with the Span
+			CurLink.appendChild(CurSpan);
+
+				// Load the image and run the script
+			CurImg.setAttribute("onload", "IMNRC('" + CurID + "')");
+			CurImg.setAttribute("src", "/_layouts/images/imnhdr.gif");
+
+		};
 
 	};
 
