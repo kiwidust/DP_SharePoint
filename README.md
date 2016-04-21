@@ -1,4 +1,4 @@
-<h2>DP_QueryString</h2>
+<h2>DP_SharePoint</h2>
 
 <ul>	<li>Author: Jim Davis, the Depressed Press</li>
 	<li>Created: Sept 01, 2012</li>
