@@ -419,10 +419,10 @@ DP_SharePoint.getColumn = function( XML, ColName ) {
 
 };
 
-	// DP_SharePoint.joinResponses
-	// Inserts all rows of XMl2 into XML1 where the given columns match.
+	// DP_SharePoint.collateResponses
+	// Inserts all rows of XMl2 into the rows of XML1 where the given columns match.
 	//
-DP_SharePoint.mergeResponses = function( XML, ColName, XML2, ColName2 ) {
+DP_SharePoint.collateResponses = function( XML, ColName, XML2, ColName2 ) {
 
 		// Get Rows of the Base and inserted XML
 	var Rows = DP_SharePoint.getRows(XML);
