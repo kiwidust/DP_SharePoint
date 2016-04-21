@@ -8,10 +8,12 @@ Website: www.depressedpress.com
 Full documentation can be found at:
 http://www.depressedpress.com/
 
-DP_SharePoint abstracts common, simple tasks in SharePoint 2007 and 2010
+DP_SharePoint abstracts common, simple tasks in SharePoint 2007 and 2010.
+Certain features require additional components, also available from depressedpress.com:
 
-	- DP_Debug: Built-in Debugging requires DP_Debug (available from depressedpress.com).
-	- DP_DateExtensions: All DateTime-related method requires DP_DateExtensions (also available from the depressedpress.com)
+	- DP_AJAX: Web service calls work in conjunction with DP_AJAX
+	- DP_DateExtensions: All DateTime-related method requires DP_DateExtensions
+	- DP_Debug: Built-in Debugging requires DP_Debug.
 
 
 Copyright (c) 1996-2012, The Depressed Press (depressedpress.com)
@@ -30,23 +32,81 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 */
 
-	// Manage other, optional, DP components
-	//
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Configuration */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 	// Set up DP_Debug (prevents errors if DP_Debug is not present
 try {  DP_Debug.isEnabled()  } catch (e) {  DP_Debug = new Object(); DP_Debug.isEnabled = function() { return false }  };
 
 
 	// Create the Root DP_SharePoint object
-	//
 DP_SharePoint = {};
 
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Page Management Methods */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-	// Add/Edit Template field methods.
+	// DP_SharePoint.isEditMode
+	// Returns "true" if the page is current in edit mode, "false" if not.
 	//
+DP_SharePoint.isEditMode = function( ) {
 
-	// DP_SharePoint.getControlRef Method - returns references to the "OK" and "Cancel" buttons on SharePoint forms
+		// "MSOLayout_InDesignMode" will be "1" if a publishing page is in Edit mode
+	if ( document.forms[MSOWebPartPageFormName].MSOLayout_InDesignMode.value == 1 ) {
+		return true;
+	};
+		// "_wikiPageMode" will only exist for Wiki pages, and will be "1" if a wiki page is in Edit mode
+	if ( document.forms[MSOWebPartPageFormName]._wikiPageMode && document.forms[MSOWebPartPageFormName]._wikiPageMode.value == 1 ) {
+		return true;
+	};
+
+		// Return
+	return false;
+
+};
+
+	// DP_SharePoint.isDialog
+	// Returns "true" if the page is being presented as a dialog, "false" if not.
+	//
+DP_SharePoint.isDialog = function( ) {
+
+		// The Command line variable  IsDlg will be "1" if the page is in a dialog.
+	if ( !window.location.search.match("[?&]IsDlg=1") )        {
+		return true;
+	};
+		// Return
+	return false;
+
+};
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Form (Add/Edit/Display) Methods */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+	// DP_SharePoint.getFormType
+	// Returns the type of form presented: "Edit", "New", "Display" or null (no form type).
+	//
+DP_SharePoint.getFormType = function( Title ) {
+
+		// Get the type of form
+	var FormType = null;
+	if ( document.location.href.indexOf("EditForm.aspx") > -1 ) {
+		FormType = "Edit";
+	} else if ( document.location.href.indexOf("NewForm.aspx") > -1 ) {
+		FormType = "New";
+	} else if ( document.location.href.indexOf("DispForm.aspx") > -1 ) {
+		FormType = "Display";
+	};
+		// Return
+	return FormType;
+
+};
+
+	// DP_SharePoint.getControlRef
+	// Returns references to the "OK" and "Cancel" buttons on SharePoint forms
 	//
 DP_SharePoint.getControlRef = function() {
 
@@ -71,20 +131,13 @@ DP_SharePoint.getControlRef = function() {
 
 };
 
-
-	// DP_SharePoint.getFieldRef Method
+	// DP_SharePoint.getFieldRef
+	// Returns a reference (or collection of references) to a field on a form.
 	//
 DP_SharePoint.getFieldRef = function( Title ) {
 
 		// Get the type of form
-	var FormType = "";
-	if ( document.location.href.indexOf("EditForm.aspx") > -1 ) {
-		FormType = "Edit";
-	} else if ( document.location.href.indexOf("NewForm.aspx") > -1 ) {
-		FormType = "New";
-	} else if ( document.location.href.indexOf("DispForm.aspx") > -1 ) {
-		FormType = "Display";
-	};
+	var FormType = DP_SharePoint.getFormType();
 
 		// Set an object to collect the output
 	var Output = {};
@@ -250,8 +303,8 @@ DP_SharePoint.getFieldRef = function( Title ) {
 
 };
 
-
-	// DP_SharePoint.addFieldEvent Method
+	// DP_SharePoint.addFieldEvent
+	// Add an event to a form field.
 	//
 DP_SharePoint.addFieldEvent = function( Field, Event, Handler ) {
 
@@ -263,8 +316,8 @@ DP_SharePoint.addFieldEvent = function( Field, Event, Handler ) {
 
 };
 
-
-	// DP_SharePoint.removeFieldEvent Method
+	// DP_SharePoint.removeFieldEvent
+	// Removes a previously added event from a form field.
 	//
 DP_SharePoint.removeFieldEvent = function( Field, Event, Handler ) {
 
@@ -276,7 +329,9 @@ DP_SharePoint.removeFieldEvent = function( Field, Event, Handler ) {
 
 };
 
-	// DP_SharePoint.hideField Method
+	// DP_SharePoint.hideField
+	// Hides a field on a form.
+	//
 DP_SharePoint.hideField = function( Field ) {
 
 		// Hide the field
@@ -286,7 +341,9 @@ DP_SharePoint.hideField = function( Field ) {
 
 };
 
-	// DP_SharePoint.showField Method
+	// DP_SharePoint.showField
+	// Shows a previously hidden form field.
+	//
 DP_SharePoint.showField = function( Field ) {
 
 		// Show the field
@@ -297,40 +354,19 @@ DP_SharePoint.showField = function( Field ) {
 };
 
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Web Service Methods */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-	// Webservice Methods
+	// DP_SharePoint.callService
+	// An abstraction method that allows web services to be called more easily.
 	//
+DP_SharePoint.callService = function( Request, ServiceURL, ServiceMethod, Params ) {
 
-	// DP_SharePoint.getElementsWithNS Method
-	// Uses the getElementsByTagNameNS() method for those browers that support it and the getElementsByTagName() method with namespace for others.
-	//
-DP_SharePoint.getRows = function( XML, Tag, NS ) {
-
-		// Even with getElementsByTagNameNS Chrome still ignores the Namespace, so a wildcard is used instead. This may cause problems if multiple namespaces have "row" tags.
-	return XML.getElementsByTagNameNS ? XML.getElementsByTagNameNS("*", Tag) : XML.getElementsByTagName(NS + ":" + Tag);
-
-};
-
-	// DP_SharePoint.callListService_Get Method
-	//
-DP_SharePoint.callListService_Get = function( Request, ServiceURL, ListName, ViewName, Query, QueryOptions, ViewFields ) {
-
-	if ( !Query ) {
-		Query = "";
-	} else {
-		Query = "<query>" + Query + "</query>";
-	};
-
-	if ( !QueryOptions ) {
-		QueryOptions = "";
-	} else {
-		QueryOptions = "<queryOptions>" + QueryOptions + "</queryOptions>";
-	};
-
-	if ( !ViewFields ) {
-		ViewFields = "";
-	} else {
-		ViewFields = "<viewFields>" + ViewFields + "</viewFields>";
+		// Manage Parameters
+	var SoapParams = "";
+	for ( var Prop in Params ) {
+		SoapParams = SoapParams + "<" + Prop + ">" + Params[Prop] + "</" + Prop + ">";
 	};
 
 		// Setup the body of the request
@@ -340,331 +376,57 @@ DP_SharePoint.callListService_Get = function( Request, ServiceURL, ListName, Vie
 	SoapBody = '<?xml version="1.0" encoding="utf-8"?>\
 	<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\
 	<soap:Body>\
-	  <GetListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">\
-	    <listName>' + ListName + '</listName>\
-	    <viewName>' + ViewName + '</viewName>\
-	    ' + Query + '\
-	    ' + QueryOptions + '\
-	    ' + ViewFields + '\
-	  </GetListItems>\
+	  <' + ServiceMethod + ' xmlns="http://schemas.microsoft.com/sharepoint/soap/">' + SoapParams + '</' + ServiceMethod + '>\
 	</soap:Body>\
 	</soap:Envelope>';
 
 		// Add the Call to the passed request
-	Request.addCall("SOAP", ServiceURL, SoapBody, {"SOAPAction":"http://schemas.microsoft.com/sharepoint/soap/GetListItems"});
+	Request.addCall("SOAP", ServiceURL, SoapBody, {"SOAPAction":"http://schemas.microsoft.com/sharepoint/soap/" + ServiceMethod});
 
 };
 
-
-	// DP_SharePoint.callListService_Update Method
+	// DP_SharePoint.getRows
+	// Uses the getElementsByTagNameNS() method for those browers that support it and the getElementsByTagName() method with namespace for others. This is a customized version of the DP_AJAX.getElementsWithNS() method available in DP_AJAX.
 	//
-DP_SharePoint.callListService_Update = function( Request, ServiceURL, ListName, Batch ) {
+DP_SharePoint.getRows = function( XML ) {
 
-		// Setup the body of the request
-	var SoapBody = "";
-
-	SoapBody = '<?xml version=\"1.0\" encoding=\"utf-8\"?>\
-	<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\
-	<soap:Body>\
-		<UpdateListItems xmlns=\"http://schemas.microsoft.com/sharepoint/soap/\">\
-			<listName>' + ListName + '</listName>\
-			<updates>\
-				<Batch OnError=\"Continue\">' + Batch + '</Batch>\
-			</updates>\
-		</UpdateListItems>\
-	</soap:Body>\
-	</soap:Envelope>';
-
-		// Add the Call to the passed request
-	Request.addCall("SOAP", ServiceURL, SoapBody, {"SOAPAction":"http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"});
+		// Even with getElementsByTagNameNS Chrome still ignores the Namespace, so a wildcard is used instead. This may cause problems if multiple namespaces have "row" tags.
+	return XML.getElementsByTagNameNS ? XML.getElementsByTagNameNS("*", "row") : XML.getElementsByTagName("z:row");
 
 };
 
-
-	// Webservice Cleanup Methods
+	// DP_SharePoint.getColumn
+	// Returns a single column of the response as an array
 	//
-
-	// DP_SharePoint.cleanSP_Numeric Method
-	//
-DP_SharePoint.cleanSP_Numeric = function( XML, ColName ) {
-
-		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-
-		// Loop over rows
-	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
-
-			// Get Current Value
-		var CurVal = "";
-		CurVal = Rows[Cnt].getAttribute(ColName);
-		if ( CurVal != "" ) {
-			Rows[Cnt].setAttribute(ColName, +(CurVal));
-		};
-
-	};
-
-		// Return a Reference to the XML
-	return XML;
-
-};
-
-	// DP_SharePoint.cleanSP_MultiLineText Method
-	//
-DP_SharePoint.cleanSP_MultiLineText = function( XML, ColName ) {
-
-		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-
-		// Loop over rows
-	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
-
-			// Get Current Value
-		var CurVal = "";
-		CurVal = Rows[Cnt].getAttribute(ColName);
-		if ( !CurVal ) {
-			Rows[Cnt].setAttribute(ColName, "");
-		} else {
-				// Create a Temporary Div to store the HTML
-			var TempDiv = document.createElement("div");
-			TempDiv.innerHTML = CurVal;
-				// Pull the (now parsed) value from the div
-			if ( TempDiv.innerText !== undefined ) {
-				Rows[Cnt].setAttribute(ColName, TempDiv.innerText); // IE
-			} else {
-				Rows[Cnt].setAttribute(ColName, TempDiv.textContent); // FF
-			};
-				// Null out the TempDiv
-			TempDiv = null;
-		};
-
-	};
-
-		// Return a Reference to the XML
-	return XML;
-
-};
-
-
-	// DP_SharePoint.cleanSP_UserList Method
-	//
-DP_SharePoint.cleanSP_UserList = function( XML, ColName, Seperator ) {
-
-	if ( !Seperator ) {
-		Seperator = "; ";
-	};
-
-		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-
-		// Loop over rows
-	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
-
-			// Get Current Value
-		var CurVal = "";
-		CurVal = Rows[Cnt].getAttribute(ColName);
-
-			// Strip ID values
-		var TempVal = CurVal.replace(/[0-9]{1,5};#/g, "");
-			// Convert remaining separators
-		TempVal = TempVal.replace(/;#/g, Seperator);
-
-			// Set new Value
-		Rows[Cnt].setAttribute(ColName, TempVal);
-
-	};
-
-		// Return a Reference to the XML
-	return XML;
-
-};
-
-
-	// DP_SharePoint.cleanSP_CalculatedField Method
-	//
-DP_SharePoint.cleanSP_CalculatedField = function( XML, ColName ) {
-
-		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-
-		// Loop over rows
-	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
-
-			// Get Current Value
-		var CurVal = "";
-		CurVal = Rows[Cnt].getAttribute(ColName);
-
-			// Split the value on the type identifier
-		var TempVal = CurVal.split(";#");
-
-			// Set new Value
-		Rows[Cnt].setAttribute(ColName, TempVal[1]);
-
-	};
-
-		// Return a Reference to the XML
-	return XML;
-
-};
-
-
-	// DP_SharePoint.cleanSP_LookupList Method
-	//
-DP_SharePoint.cleanSP_LookupList = function( XML, ColName, NoValuePlaceholder, Seperator ) {
-
-	if ( !Seperator ) {
-		Seperator = "; ";
-	};
-
-		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-
-		// Loop over rows
-	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
-
-			// Get Current Value
-		var CurValue = "";
-		CurVal = Rows[Cnt].getAttribute(ColName);
-
-			// If the attribute exists, clean it up
-		if ( CurVal ) {
-				// Strip ID values
-			var TempVal = CurVal.replace(/[0-9]{1,5};#/g, "");
-				// Convert remaining separators
-			TempVal = TempVal.replace(/;#/g, Seperator );
-
-				// Set new Value
-			Rows[Cnt].setAttribute(ColName, TempVal);
-
-		} else {
-
-				// Set Value to NoValuePlaceholder
-			Rows[Cnt].setAttribute(ColName, NoValuePlaceholder);
-
-		};
-
-	};
-
-		// Return a Reference to the XML
-	return XML;
-
-};
-
-
-	// DP_SharePoint.cleanSP_DateTime Method
-	//
-DP_SharePoint.cleanSP_DateTime = function( XML, ColName, TimeFormat, DateFormat, NonDateValue ) {
-
-		// This method requires functions from DP_DateExtensions
-	if ( !Date.DP_DateExtensions ) {
-		throw new Error("The DP_SharePoint.cleanSP_DateTime() method requires that DP_DateExtensions (available from depressedpress.com) be loaded.");
-	};
-
-		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-
-		// Loop over rows
-	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
-
-			// Get Current Value
-		var CurVal = "";
-		CurVal = Rows[Cnt].getAttribute(ColName);
-
-			// Parse the Date
-		var CurDate = Date.parseFormat(CurVal, "YYYY-MM-DD HH:mm:ss");
-
-			// Determine what to
-		var TempVal = "";
-		if ( CurDate != null ) {
-			if ( TimeFormat != null && DateFormat == null ) {
-				TempVal = CurDate.timeFormat(TimeFormat);
-			} else if ( TimeFormat == null && DateFormat != null ) {
-				TempVal = CurDate.dateFormat(DateFormat);
-			} else {
-				TempVal = CurDate.timeFormat(TimeFormat) + " " + CurDate.dateFormat(DateFormat);
-			};
-		} else {
-			if ( NonDateValue != null ) {
-				TempVal = NonDateValue;
-			} else {
-				TempVal = CurVal;
-			};
-		};
-
-			// Set new Value
-		Rows[Cnt].setAttribute(ColName, TempVal);
-
-	};
-
-		// Return a Reference to the XML
-	return XML;
-
-};
-
-
-	// DP_SharePoint.cleanSP_Custom Method
-	//
-DP_SharePoint.cleanSP_Custom = function( XML, ColName, Handler, NewColName ) {
-
-		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-
-		// Loop over rows
-	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
-
-			// Get Current Value
-		var CurVal = "";
-		CurVal = Rows[Cnt].getAttribute(ColName);
-
-			// Set new Value
-		if ( !NewColName ) {
-			Rows[Cnt].setAttribute(ColName, Handler(CurVal));
-		} else {
-			Rows[Cnt].setAttribute(NewColName, Handler(CurVal));
-		};
-
-	};
-
-		// Return a Reference to the XML
-	return XML;
-
-};
-
-
-
-
-	// Webservice Utility Methods
-	//
-
-	// DP_SharePoint.getAttributes
-	//
-DP_SharePoint.getAttributes = function( XML, ColName ) {
+DP_SharePoint.getColumn = function( XML, ColName ) {
 
 		// Set an array for return
-	var Attributes = [];
+	var Col = [];
 
 		// Get Rows
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
+	var Rows = DP_SharePoint.getRows(XML);
 
 		// Loop over rows
 	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
 
 			// Get Current Value
-		Attributes[Cnt] = Rows[Cnt].getAttribute(ColName);
+		Col[Cnt] = Rows[Cnt].getAttribute(ColName);
 
 	};
 
 		// Return the Array
-	return Attributes;
+	return Col;
 
 };
 
 	// DP_SharePoint.joinResponses
+	// Inserts all rows of XMl2 into XML1 where the given columns match.
 	//
-DP_SharePoint.joinResponses = function( XML, ColName, XML2, ColName2 ) {
+DP_SharePoint.mergeResponses = function( XML, ColName, XML2, ColName2 ) {
 
 		// Get Rows of the Base and inserted XML
-	var Rows = DP_SharePoint.getRows(XML, "row", "z");
-	var Rows2 = DP_SharePoint.getRows(XML2, "row", "z");
+	var Rows = DP_SharePoint.getRows(XML);
+	var Rows2 = DP_SharePoint.getRows(XML2);
 
 		// Loop over rows of the Base XML
 	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
@@ -698,12 +460,279 @@ DP_SharePoint.joinResponses = function( XML, ColName, XML2, ColName2 ) {
 };
 
 
-	// Utility Methods
-	//
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Web Service Return Cleanup Methods */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-	// DP_SharePoint.ReplaceLinks Method
+	// DP_SharePoint.cleanSP_Numeric
+	// Cleans the SP_Numeric field type by creating JavaScript numerics from XML/SP strings.
+	//
+DP_SharePoint.cleanSP_Numeric = function( XML, ColName ) {
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML);
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+		if ( CurVal != "" ) {
+			Rows[Cnt].setAttribute(ColName, +(CurVal));
+		};
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+	// DP_SharePoint.cleanSP_MultiLineText
+	// Cleans the SP_MultiLineText by parsing embedded HTML.
+	//
+DP_SharePoint.cleanSP_MultiLineText = function( XML, ColName ) {
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML);
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+		if ( !CurVal ) {
+			Rows[Cnt].setAttribute(ColName, "");
+		} else {
+				// Create a Temporary Div to store the HTML
+			var TempDiv = document.createElement("div");
+			TempDiv.innerHTML = CurVal;
+				// Pull the (now parsed) value from the div
+			if ( TempDiv.innerText !== undefined ) {
+				Rows[Cnt].setAttribute(ColName, TempDiv.innerText); // IE
+			} else {
+				Rows[Cnt].setAttribute(ColName, TempDiv.textContent); // FF
+			};
+				// Null out the TempDiv
+			TempDiv = null;
+		};
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+
+	// DP_SharePoint.cleanSP_UserList
+	// Cleans the SP_UserList field type by eliminating prepended database identification information.
+	//
+DP_SharePoint.cleanSP_UserList = function( XML, ColName, Seperator ) {
+
+	if ( !Seperator ) {
+		Seperator = "; ";
+	};
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML);
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+
+			// Strip ID values
+		var TempVal = CurVal.replace(/[0-9]{1,5};#/g, "");
+			// Convert remaining separators
+		TempVal = TempVal.replace(/;#/g, Seperator);
+
+			// Set new Value
+		Rows[Cnt].setAttribute(ColName, TempVal);
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+
+	// DP_SharePoint.cleanSP_CalculatedField
+	// Cleans the SP_CalculatedField field type by eliminating prepended database identification information.
+	//
+DP_SharePoint.cleanSP_CalculatedField = function( XML, ColName ) {
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML);
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+
+			// Split the value on the type identifier
+		var TempVal = CurVal.split(";#");
+
+			// Set new Value
+		Rows[Cnt].setAttribute(ColName, TempVal[1]);
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+
+	// DP_SharePoint.cleanSP_LookupList
+	// Cleans the SP_LookupList field type by eliminating prepended database identification information and, optionally, applying a placeholder to missing empty fields.
+	//
+DP_SharePoint.cleanSP_LookupList = function( XML, ColName, NoValuePlaceholder, Seperator ) {
+
+	if ( !Seperator ) {
+		Seperator = "; ";
+	};
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML);
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurValue = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+
+			// If the attribute exists, clean it up
+		if ( CurVal ) {
+				// Strip ID values
+			var TempVal = CurVal.replace(/[0-9]{1,5};#/g, "");
+				// Convert remaining separators
+			TempVal = TempVal.replace(/;#/g, Seperator );
+
+				// Set new Value
+			Rows[Cnt].setAttribute(ColName, TempVal);
+
+		} else {
+
+				// Set Value to NoValuePlaceholder
+			Rows[Cnt].setAttribute(ColName, NoValuePlaceholder);
+
+		};
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+
+	// DP_SharePoint.cleanSP_DateTime
+	// Cleans the SP_DateTime field type by formatting values and, optionally, applying a placeholder value to non-dates.
+	// * Requires DP_DateExtensions, also by DepressedPress, to be loaded.
+	//
+DP_SharePoint.cleanSP_DateTime = function( XML, ColName, TimeFormat, DateFormat, NonDateValue ) {
+
+		// This method requires functions from DP_DateExtensions
+	if ( !Date.DP_DateExtensions ) {
+		throw new Error("The DP_SharePoint.cleanSP_DateTime() method requires that DP_DateExtensions (available from depressedpress.com) be loaded.");
+	};
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML);
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+
+			// Parse the Date
+		var CurDate = Date.parseFormat(CurVal, "YYYY-MM-DD HH:mm:ss");
+
+			// Determine what to format
+		var TempVal = "";
+		if ( CurDate != null ) {
+			if ( TimeFormat != null && DateFormat == null ) {
+				TempVal = CurDate.timeFormat(TimeFormat);
+			} else if ( TimeFormat == null && DateFormat != null ) {
+				TempVal = CurDate.dateFormat(DateFormat);
+			} else {
+				TempVal = CurDate.timeFormat(TimeFormat) + " " + CurDate.dateFormat(DateFormat);
+			};
+		} else {
+			if ( NonDateValue != null ) {
+				TempVal = NonDateValue;
+			} else {
+				TempVal = CurVal;
+			};
+		};
+
+			// Set new Value
+		Rows[Cnt].setAttribute(ColName, TempVal);
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+
+	// DP_SharePoint.cleanSP_Custom
+	// Cleans any SP field type by applying a custom handler to every value in the column, optionally storing the modified values in a new column.
+	//
+DP_SharePoint.cleanSP_Custom = function( XML, ColName, Handler, NewColName ) {
+
+		// Handle parameters
+	if ( !NewColName ) {
+		var NewColName = ColName;
+	};
+
+		// Get Rows
+	var Rows = DP_SharePoint.getRows(XML);
+
+		// Loop over rows
+	for ( var Cnt=0; Cnt < Rows.length; Cnt++ ) {
+
+			// Get Current Value
+		var CurVal = "";
+		CurVal = Rows[Cnt].getAttribute(ColName);
+
+			// Set new Value
+		if ( !NewColName ) {
+			Rows[Cnt].setAttribute(ColName, Handler(CurVal));
+		} else {
+			Rows[Cnt].setAttribute(NewColName, Handler(CurVal));
+		};
+
+	};
+
+		// Return a Reference to the XML
+	return XML;
+
+};
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Utility Methods */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+	// DP_SharePoint.ReplaceLinks
 	//
 DP_SharePoint.ReplaceLinks = function() {
+
+		// Do not run the function in Edit mode - it only causes problems.
+	if ( DP_SharePoint.isEditMode() ) { return false };
 
 		// Obtain a collection of all page links
 	var AllLinks = document.getElementsByTagName("a");
@@ -740,6 +769,9 @@ DP_SharePoint.ReplaceLinks = function() {
 				break;
 			case "sametime":
 				ReplaceLinks_Sametime( CurLink );
+				break;
+			case "custom":
+				ReplaceLinks_Custom( CurLink );
 				break;
 			default:
 				ReplaceLinks_Other( CurLink );
